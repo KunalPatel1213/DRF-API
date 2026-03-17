@@ -1,0 +1,1 @@
+# TODO: Fix DRF issues - COMPLETE\n\n1. [x] Fixed imports in api/views.py\n2. [x] Fixed @api_view(['GET']) in api/views.py\n3. [x] Fixed syntax in api/urls.py\n4. [x] Tested: server runs at http://127.0.0.1:8000 (kill previous with Ctrl+C if needed, run `python manage.py runserver` from DRF dir).
