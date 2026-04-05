@@ -1,4 +1,4 @@
-# from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 # from django.http import JsonResponse
 from students.models import Student
 from .serializers import StudentSerializer, EmployeeSerializer
@@ -8,49 +8,60 @@ from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 from employees.models import Employee as EmployeeModel
 from django.http import Http404
-from rest_framework import mixins, generics
+from rest_framework import mixins, generics, viewsets
+from django_filters.rest_framework import DjangoFilterBackend
+from blogs.models import Blog, Comment
+from blogs.serializers import BlogSerializer, CommentSerializer
+from .paginations import CustomPagination
+from employees.filters import Employeefilter
+from rest_framework.filters import SearchFilter
 # Create your views here.
 
-@api_view(['GET', 'POST'])
-def studentView(request):
-    if request.method  == 'GET':
+# @api_view(['GET', 'POST'])
+# def studentView(request):
+#     if request.method  == 'GET':
         
-        students = Student.objects.all()
-        serializer = StudentSerializer(students, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    elif request.method == 'POST':
-        serializer = StudentSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        print(serializer.errors)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#         students = Student.objects.all()
+#         serializer = StudentSerializer(students, many=True)
+#         return Response(serializer.data, status=status.HTTP_200_OK)
+#     elif request.method == 'POST':
+#         serializer = StudentSerializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+#         print(serializer.errors)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
 
-@api_view(['GET', 'PUT', 'DELETE'])
-def studentDetailView(request, pk):
-    try:
-        student = Student.objects.get(pk=pk)
-    except Student.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
+# @api_view(['GET', 'PUT', 'PATCH', 'DELETE'])
+# def studentDetailView(request, pk):
+#     try:
+#         student = Student.objects.get(pk=pk)
+#     except Student.DoesNotExist:
+#         return Response(status=status.HTTP_404_NOT_FOUND)
     
-
-    if request.method == 'GET':
-        serializer = StudentSerializer(student)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+#     if request.method == 'GET':
+#         serializer = StudentSerializer(student)
+#         return Response(serializer.data, status=status.HTTP_200_OK)
     
-    elif request.method == 'PUT':
-        serializer = StudentSerializer(student, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#     elif request.method == 'PUT':
+#         serializer = StudentSerializer(student, data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data, status=status.HTTP_200_OK)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    elif request.method == 'DELETE':
-        student.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+#     elif request.method == 'PATCH':
+#         serializer = StudentSerializer(student, data=request.data, partial=True)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data, status=status.HTTP_200_OK)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+#     elif request.method == 'DELETE':
+#         student.delete()
+#         return Response(status=status.HTTP_204_NO_CONTENT)
     
 
 # class Employees(APIView):
@@ -99,8 +110,8 @@ def studentDetailView(request, pk):
 
 
 
-
-
+"""
+#Mixins
 class Employee(mixins.ListModelMixin, mixins.CreateModelMixin, generics.GenericAPIView):
     queryset = EmployeeModel.objects.all()
     serializer_class = EmployeeSerializer
@@ -115,16 +126,109 @@ class Employee(mixins.ListModelMixin, mixins.CreateModelMixin, generics.GenericA
     
 
 
-class EmployeeDetail(mixins.RetrieveModelMixin, mixins.UpdateModelMixin , mixins.DestroyModelMixin ,generics.GenericAPIView):
-    queryset  = EmployeeModel.objects.all()
+class EmployeeDetail(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, generics.GenericAPIView):
+    queryset = EmployeeModel.objects.all()
     serializer_class = EmployeeSerializer
 
     def get(self, request, pk):
-        return self.retrieve(request, pk)
-    
+        return self.retrieve(request, pk=pk)
 
     def put(self, request, pk):
-        return self.update(request, pk)
-    
+        return self.update(request, pk=pk)
+
+    def patch(self, request, pk):
+        return self.partial_update(request, pk=pk)
+
     def delete(self, request, pk):
-        return self.destroy(request, pk)
+        return self.destroy(request, pk=pk)
+"""
+
+"""
+#Generics
+class Employees(generics.ListCreateAPIView):
+    queryset = EmployeeModel.objects.all()
+    serializer_class = EmployeeSerializer
+
+#Generics
+class EmployeeDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = EmployeeModel.objects.all()
+    serializer_class = EmployeeSerializer
+    lookup_field = 'pk'
+
+"""
+
+
+
+# class EmployeeViews(viewsets.ViewSet):
+#     def list(self, request):
+#         queryset = EmployeeModel.objects.all()
+#         serializer = EmployeeSerializer(queryset, many=True)
+#         return Response(serializer.data)
+    
+#     def create(self, request):
+#         serializer = EmployeeSerializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors)
+    
+#     def retrieve(selg, request, pk=None):
+#         employee = get_object_or_404(Employee, pk=pk)
+#         serializer = EmployeeSerializer(employee)
+#         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+#     def update(self, request, pk=None):
+#         employee = get_object_or_404(Employee, pk=pk)
+#         serializer = EmployeeSerializer(employee, data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data)
+#         return Response(serializer.errors)
+    
+#     def delete(self, request, pk=None):
+#         employee = get_object_or_404(Employee, pk=pk)
+#         employee.delete()
+#         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+
+
+
+
+
+class EmployeeViewset(viewsets.ModelViewSet):
+    queryset = EmployeeModel.objects.all()
+    serializer_class = EmployeeSerializer
+    pagination_class = CustomPagination
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_class = Employeefilter
+    search_fields = ['emp_id', 'emp_name', 'designation']
+
+
+class BlogView(generics.ListCreateAPIView):
+    queryset = Blog.objects.all()
+    serializer_class  = BlogSerializer
+    filter_backends = [SearchFilter]
+    search_fields = ['blog_title', 'blog_body']
+
+
+
+class CommentsView(generics.ListCreateAPIView):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+
+
+
+class BlogDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Blog.objects.all()
+    serializer_class = BlogSerializer
+    lookup_field = 'pk'
+
+
+class CommentDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+    lookup_field = 'pk'
+
+
+
